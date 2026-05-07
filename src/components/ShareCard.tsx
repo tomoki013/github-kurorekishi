@@ -28,16 +28,28 @@ function countByClassification(
   return counts;
 }
 
-async function downloadPng(element: HTMLElement): Promise<void> {
-  const dataUrl = await toPng(element, {
+async function generatePngDataUrl(element: HTMLElement): Promise<string> {
+  return toPng(element, {
     cacheBust: true,
     backgroundColor: "#ffffff",
     pixelRatio: 2,
   });
+}
+
+function downloadPngFromDataUrl(dataUrl: string): void {
   const link = document.createElement("a");
   link.download = "github-kurorekishi-result.png";
   link.href = dataUrl;
   link.click();
+}
+
+function canNativeShare(): boolean {
+  if (!navigator.canShare) return false;
+  try {
+    return navigator.canShare({ files: [new File([], "test.png", { type: "image/png" })] });
+  } catch {
+    return false;
+  }
 }
 
 export function ShareCard({ login, avatarUrl, repos }: Props) {
@@ -58,10 +70,13 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
 
   const siteUrl = window.location.origin;
 
+  const isMobileShare = canNativeShare();
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
-      await downloadPng(cardRef.current);
+      const dataUrl = await generatePngDataUrl(cardRef.current);
+      downloadPngFromDataUrl(dataUrl);
     } catch {
       alert("PNG生成に失敗しました。");
     }
@@ -71,19 +86,34 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
     if (!cardRef.current) return;
     setLoading(true);
     try {
-      // Safari fix: window.open must be called synchronously before any await.
-      // Calling it after await gets blocked by Safari's popup blocker.
-      const text = encodeURIComponent(
-        `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
-      );
-      window.open(
-        `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(siteUrl)}`,
-        "_blank",
-        "noopener,noreferrer"
-      );
-      await downloadPng(cardRef.current);
-    } catch {
-      alert("PNG生成に失敗しました。");
+      const dataUrl = await generatePngDataUrl(cardRef.current);
+
+      if (isMobileShare) {
+        // Mobile: use native share sheet (photos/X/LINE etc.)
+        const blob = await fetch(dataUrl).then((r) => r.blob());
+        const file = new File([blob], "github-kurorekishi-result.png", { type: "image/png" });
+        await navigator.share({
+          files: [file],
+          text: `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史\n${siteUrl}`,
+        });
+      } else {
+        // Desktop: Safari fix — window.open must be called synchronously before any await.
+        // So we await PNG first, then open X (desktop popups aren't blocked the same way).
+        downloadPngFromDataUrl(dataUrl);
+        const text = encodeURIComponent(
+          `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
+        );
+        window.open(
+          `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(siteUrl)}`,
+          "_blank",
+          "noopener,noreferrer"
+        );
+      }
+    } catch (err) {
+      // navigator.share throws AbortError if user cancels — not an error
+      if (err instanceof Error && err.name !== "AbortError") {
+        alert("PNG生成に失敗しました。");
+      }
     } finally {
       setLoading(false);
       setShowModal(false);
@@ -178,11 +208,19 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
               <p className="text-2xl">⛏️</p>
               <h2 className="font-black text-gray-800 text-lg">Xでシェア</h2>
             </div>
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
-              <p>① Xの投稿画面が開きます</p>
-              <p>② PNGが自動でダウンロードされます</p>
-              <p>③ ダウンロードしたPNGを投稿に添付してシェアしてください</p>
-            </div>
+            {isMobileShare ? (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
+                <p>① PNGが生成されます</p>
+                <p>② シェアシートが開きます</p>
+                <p>③ XやLINEなどお好きなアプリでシェアできます</p>
+              </div>
+            ) : (
+              <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
+                <p>① PNGが自動でダウンロードされます</p>
+                <p>② Xの投稿画面が開きます</p>
+                <p>③ ダウンロードしたPNGを投稿に添付してシェアしてください</p>
+              </div>
+            )}
             <div className="flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
