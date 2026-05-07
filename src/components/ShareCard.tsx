@@ -67,11 +67,12 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
 
   return (
     <div className="space-y-3">
-      {/* The visual card for PNG export */}
+      {/* Wrapper captures PNG — padding prevents shadow clipping */}
+      <div ref={cardRef} style={{ padding: "20px", backgroundColor: "#ffffff", display: "inline-block", width: "100%" }}>
+      {/* The visual card */}
       <div
-        ref={cardRef}
-        className="bg-white border-2 border-gray-200 rounded-xl p-6 max-w-md mx-auto shadow-lg"
-        style={{ fontFamily: "system-ui, sans-serif" }}
+        className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg"
+        style={{ fontFamily: "system-ui, sans-serif", maxWidth: "440px", margin: "0 auto" }}
       >
         <div className="flex items-center gap-3 mb-4">
           <img
@@ -114,6 +115,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 text-center">
           GitHub黒歴史 — private repo・email・source codeは取得していません
         </div>
+      </div>
       </div>
 
       {/* Action button */}
