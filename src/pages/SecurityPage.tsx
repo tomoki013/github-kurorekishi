@@ -50,7 +50,7 @@ export function SecurityPage() {
           </div>
           <div className="bg-green-50 border border-green-200 rounded-lg p-4 space-y-2">
             <h3 className="text-sm font-bold text-green-800">
-              公開リポジトリのメタデータ（認証なし・公開API）
+              公開リポジトリのメタデータ（公開API・アプリ認証）
             </h3>
             <ul className="text-sm text-green-700 space-y-1">
               <li>• リポジトリ名、説明文、URL</li>
@@ -127,6 +127,13 @@ export function SecurityPage() {
               <span>アクセストークンはデータベースやKVに保存しません</span>
             </li>
           </ul>
+          <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-lg p-3">
+            リポジトリの取得にはユーザーのアクセストークンを使用しません。
+            サーバーサイドでOAuth Appの
+            <code className="bg-gray-100 px-1 rounded text-xs">client_id:client_secret</code>
+            をアプリ認証として使用しています（レートリミット対策）。
+            これはユーザーの認証情報ではなく、アプリ自身の識別情報です。
+          </p>
         </section>
 
         {/* Session design */}
