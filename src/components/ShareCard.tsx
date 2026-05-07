@@ -94,7 +94,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           />
           <div>
             <p className="font-bold text-gray-800">@{login}</p>
-            <p className="text-xs text-gray-500">GitHub考古学 発掘報告書</p>
+            <p className="text-xs text-gray-500">発掘報告書</p>
           </div>
           <div className="ml-auto text-right">
             <p className="text-xl font-black text-gray-700">⛏️ GitHub黒歴史</p>

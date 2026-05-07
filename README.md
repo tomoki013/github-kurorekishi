@@ -1,167 +1,163 @@
-# ⛏️ Gitcheology — GitHub考古学
+# ⛏️ GitHub黒歴史
 
-A GitHub archaeology joke site that excavates your abandoned public repositories, calculates their "neglect score" and "dark history score", and generates a shareable result image — all without accessing any sensitive data.
-
-> GitHubに眠る放置リポジトリを発掘するネタサイト。
-
----
-
-## What this app does
-
-1. Signs in with GitHub OAuth (scope = empty — no permissions requested)
-2. Reads your **public profile** (minimum): user ID, username, avatar URL only
-3. Reads **public repository metadata** for your account (unauthenticated API, no auth token used)
-4. Calculates joke scores: neglect score, one-day-wonder score, name shame score, memorial score, initial commit portrait score
-5. Generates a shareable result image **locally in your browser** — never uploaded to any server
+GitHubに眠る放置リポジトリを発掘するネタサイト。  
+公開リポジトリのメタデータだけを使って、黒歴史・放置・一日坊主を判定します。
 
 ---
 
-## What this app NEVER accesses
+## このアプリがやること
 
-- Private repositories
-- Email addresses
-- Source code or file contents
-- README body
-- Commit body or history
-- Issue body
-- Pull request body
-- Organizations
-- Followers / Following
-- Starred repositories
-- Branch list
+1. GitHub OAuth でログイン（権限：なし）
+2. 公開プロフィールの最小情報を取得（ユーザーID・ユーザー名・アバター画像のみ）
+3. 公開リポジトリのメタデータを取得（非認証APIを使用、アクセストークン不要）
+4. 放置スコア・黒歴史スコアを計算
+5. 結果画像を**ブラウザ内で**生成（サーバーにはアップロードしない）
 
 ---
 
-## What this app stores
+## 取得しないもの
 
-**Nothing.**
-
-- No database
-- No key-value store (no Cloudflare KV)
-- No diagnosis history
-- No generated images on server
-- No sharing URLs
-- No external analytics (no Google Analytics, etc.)
-- No AI services
-
----
-
-## GitHub OAuth Scope
-
-**`scope=""` (empty string).** No permissions are requested.
-
-The GitHub authorization page will show **"No permissions requested."**
-
-If you see any scope listed on the authorization page, deny access immediately.
+- private リポジトリ
+- メールアドレス
+- ソースコード・ファイルの中身
+- README の本文
+- コミットの中身・履歴
+- Issue の中身
+- Pull Request の中身
+- Organization 情報
+- フォロワー・フォロー
+- スター済みリポジトリ
+- ブランチ一覧
 
 ---
 
-## Token handling
+## 保存するもの
 
-- The GitHub access token is used **only briefly** during the OAuth callback to verify your identity
-- It is **revoked immediately** after fetching your user ID, username, and avatar URL via `DELETE https://api.github.com/applications/{client_id}/token`
-- It is **never saved** to any storage (database, KV, disk)
-- It is **never sent to the client**
+**何もありません。**
 
----
-
-## Session
-
-- Short-lived **HttpOnly Secure SameSite=Lax** cookie only
-- Cookie name: `__Host-session` (the `__Host-` prefix enforces Secure, Path=/, no Domain attribute)
-- Signed with **HMAC-SHA256** using the `SESSION_SECRET` environment variable
-- **1-hour expiry**
-- Contains only: user ID, username, avatar URL
-
-The OAuth state parameter is also protected with a signed cookie (`__Host-oauth-state`, 10-minute expiry).
+- データベースなし
+- KV（Cloudflare KV）なし
+- 診断結果の保存なし
+- サーバーへの画像保存なし
+- 共有URLなし
+- 外部アナリティクスなし（Google Analyticsなど）
+- AIなし
 
 ---
 
-## Image sharing
+## GitHub OAuth スコープ
 
-- The result image (PNG) is **generated locally in your browser** using `html-to-image`
-- The image is **never uploaded** to our server
-- After saving the PNG, attach it manually when sharing on X (Twitter)
+**`scope=""` （空）** — 権限を一切要求しません。
+
+GitHub の認可画面には **「このアプリケーションはパブリックな情報のみを読み取ります」** と表示されます。  
+もし何らかの権限が表示された場合は、ログインを中止してください。
 
 ---
 
-## Local development
+## アクセストークンの扱い
 
-### Prerequisites
+- OAuth コールバック時にユーザーのID・ユーザー名・アバターURLを取得するためだけに使用
+- 取得後すぐに `DELETE https://api.github.com/applications/{client_id}/token` で**失効**させる
+- ストレージ（DB・KV・ディスク）には**保存しない**
+- クライアントには**返さない**
+
+---
+
+## セッション
+
+- `__Host-session` という名前の短命 Cookie のみ（HttpOnly・Secure・SameSite=Lax）
+- `__Host-` プレフィックスにより Secure・Path=/・Domain 属性なし が強制される
+- `SESSION_SECRET` 環境変数を使って **HMAC-SHA256 で署名**
+- **有効期限：1時間**
+- 含む情報：ユーザーID・ユーザー名・アバターURL のみ
+
+OAuth の state パラメータも署名済み Cookie（`__Host-oauth-state`・有効期限10分）で保護しています。
+
+---
+
+## 画像シェア
+
+- 結果画像（PNG）は `html-to-image` を使って**ブラウザ内で生成**
+- サーバーには**送信しない**
+- 保存後、X（Twitter）に手動で添付してシェアできます
+
+---
+
+## ローカル開発
+
+### 必要なもの
 
 - [pnpm](https://pnpm.io/) v9+
 - [Node.js](https://nodejs.org/) v18+
 - [Wrangler CLI](https://developers.cloudflare.com/workers/wrangler/)
 
-### 1. Install dependencies
+### 1. 依存関係をインストール
 
 ```bash
 pnpm install
 ```
 
-### 2. Create a GitHub OAuth App
+### 2. GitHub OAuth App を作成
 
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Click **"New OAuth App"**
-3. Fill in:
-   - **Application name**: `Gitcheology (dev)`
+1. [GitHub Developer Settings](https://github.com/settings/developers) を開く
+2. **「New OAuth App」** をクリック
+3. 以下を入力:
+   - **Application name**: `GitHub黒歴史 (dev)`
    - **Homepage URL**: `http://localhost:5173`
    - **Authorization callback URL**: `http://localhost:8787/api/auth/github/callback`
-4. Click **"Register application"**
-5. Note your **Client ID** and generate a **Client Secret**
+4. **「Register application」** をクリック
+5. **Client ID** をコピーし、**Client Secret** を生成してコピー
 
-### 3. Set secrets for local development
+### 3. `.dev.vars` を作成（gitignore 済み）
 
-Create a `.dev.vars` file in the project root (this file is gitignored):
+プロジェクトルートに `.dev.vars` ファイルを作成:
 
 ```
-GITHUB_CLIENT_ID=your_client_id_here
-GITHUB_CLIENT_SECRET=your_client_secret_here
-SESSION_SECRET=your_random_secret_at_least_32_characters_long
+GITHUB_CLIENT_ID=ここにClient IDを貼る
+GITHUB_CLIENT_SECRET=ここにClient Secretを貼る
+SESSION_SECRET=32文字以上のランダムな文字列
 GITHUB_REDIRECT_URI=http://localhost:8787/api/auth/github/callback
 ```
 
-### 4. Start development servers
+### 4. 開発サーバーを起動
 
-Open **two terminals**:
-
-**Terminal 1 — Vite frontend (port 5173)**:
+**ターミナル1 — Vite フロントエンド（ポート5173）**:
 ```bash
 pnpm run dev
 ```
 
-**Terminal 2 — Wrangler worker (port 8787)**:
+**ターミナル2 — Wrangler Worker（ポート8787）**:
 ```bash
 pnpm run worker:dev
 ```
 
-Open your browser at `http://localhost:5173`.
+ブラウザで `http://localhost:5173` を開く。
 
-> The Vite dev server proxies `/api/*` requests to `http://localhost:8787`.
+> Vite の dev server が `/api/*` リクエストを `http://localhost:8787` にプロキシします。
 
 ---
 
-## Environment variables
+## 環境変数
 
-| Variable | Description |
+| 変数名 | 説明 |
 |---|---|
-| `GITHUB_CLIENT_ID` | GitHub OAuth App Client ID |
-| `GITHUB_CLIENT_SECRET` | GitHub OAuth App Client Secret |
-| `SESSION_SECRET` | Random secret for HMAC-SHA256 signing (minimum 32 characters) |
-| `GITHUB_REDIRECT_URI` | OAuth callback URL (e.g. `https://gitcheology.dev/api/auth/github/callback`) |
+| `GITHUB_CLIENT_ID` | GitHub OAuth App の Client ID |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth App の Client Secret |
+| `SESSION_SECRET` | HMAC-SHA256 署名用のランダムな秘密鍵（32文字以上） |
+| `GITHUB_REDIRECT_URI` | OAuth コールバック URL（例：`https://github-kurorekishi.example.workers.dev/api/auth/github/callback`） |
 
 ---
 
-## Deploy to Cloudflare
+## Cloudflare Workers へのデプロイ
 
-### 1. Create a production GitHub OAuth App
+### 1. 本番用 GitHub OAuth App を作成
 
-Set the **Authorization callback URL** to your production domain:
+**Authorization callback URL** を本番の URL に設定:
 ```
-https://your-worker.workers.dev/api/auth/github/callback
+https://github-kurorekishi.{あなたのサブドメイン}.workers.dev/api/auth/github/callback
 ```
 
-### 2. Set secrets via Wrangler
+### 2. Wrangler でシークレットを登録
 
 ```bash
 wrangler secret put GITHUB_CLIENT_ID
@@ -170,109 +166,112 @@ wrangler secret put SESSION_SECRET
 wrangler secret put GITHUB_REDIRECT_URI
 ```
 
-### 3. Deploy
+### 3. デプロイ
 
 ```bash
 pnpm run deploy
 ```
 
-This runs `tsc --noEmit` (type check), `vite build` (frontend), then `wrangler deploy` (worker + assets).
+型チェック（`tsc --noEmit`）→ フロントエンドビルド（`vite build`）→ デプロイ（`wrangler deploy`）の順に実行されます。
 
----
+### GitHub Actions による自動デプロイ
 
-## Modifying scoring
+`main` ブランチに push すると自動でデプロイされます（`.github/workflows/deploy.yml`）。
 
-Edit `src/lib/scoring/rules.ts` to adjust score thresholds and penalties.
+GitHub リポジトリの **Settings → Secrets and variables → Actions** に以下を登録:
 
-The scoring logic is implemented as pure functions in `src/lib/scoring/`:
-
-| File | Description |
+| Secret 名 | 説明 |
 |---|---|
-| `rules.ts` | All scoring constants and keyword lists |
-| `stale.ts` | Calculates how long-neglected a repo is |
-| `oneDay.ts` | Calculates one-day-wonder score |
-| `nameShame.ts` | Penalizes placeholder repo names |
-| `memorial.ts` | Score for archived repos |
-| `initialCommitPortrait.ts` | Detects repos abandoned after initial commit |
-| `classify.ts` | Classifies repos into categories |
-| `reasons.ts` | Generates human-readable Japanese reason strings |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare の API トークン（Edit Cloudflare Workers テンプレートで作成） |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare のアカウント ID |
 
 ---
 
-## "Initial commitの遺影" detection
+## スコア計算の変更方法
 
-This classification is determined **using metadata only** — no commit API is called.
+`src/lib/scoring/rules.ts` を編集してスコアの閾値やキーワードを調整できます。
 
-Conditions (all must be true):
-1. `created_at` and `pushed_at` differ by **1 day or less** (active days ≤ 1)
-2. `pushed_at` is **365 or more days** in the past
-3. Not `archived`
-4. Not a `fork`
+スコア計算は `src/lib/scoring/` 配下の純粋関数として実装されています:
 
-This is a metadata-based estimate. A repo that was pushed to once soon after creation and then never touched again qualifies.
-
----
-
-## Classifications
-
-| Classification | Description |
+| ファイル | 役割 |
 |---|---|
-| 🪦 Initial commitの遺影 | Created and pushed within 1 day, abandoned for 1+ year (not archived, not fork) |
-| 💀 黒歴史級化石 | Stale score ≥ 80 |
-| 🌱 一日坊主型黒歴史 | One-day score ≥ 75 AND name shame score ≥ 50 |
-| 🕯️ 供養済み | Archived (memorial score ≥ 70) |
-| 🏛️ 古代遺跡 | Stale score 60–79 |
-| 😴 休眠中 | Stale score 40–59 |
-| 💚 現役っぽい | Everything else |
+| `rules.ts` | スコア定数・キーワード一覧 |
+| `stale.ts` | 放置スコアの計算 |
+| `oneDay.ts` | 一日坊主スコアの計算 |
+| `nameShame.ts` | 仮置き名スコアの計算 |
+| `memorial.ts` | 供養済み（archive）スコアの計算 |
+| `initialCommitPortrait.ts` | Initial commitの遺影 判定 |
+| `classify.ts` | スコアからカテゴリに分類 |
+| `reasons.ts` | 判定理由の文字列生成 |
 
 ---
 
-## Rate limiting
+## 「Initial commitの遺影」の判定条件
 
-**GitHub API (unauthenticated):** 60 requests per hour per IP address.
+コミットAPIは使用しません。**メタデータのみ**で推定判定します。
 
-Note: Cloudflare Worker outbound IPs are shared among many users, so the effective rate limit per individual may be lower than 60/hour. If you hit a 429, wait a few minutes and try again.
+以下の条件をすべて満たす場合に判定:
 
-**App-level rate limits** (per minute):
+1. `created_at` と `pushed_at` の差が **1日以内**
+2. `pushed_at` から **365日以上** 経過している
+3. `archived` が false
+4. `fork` が false
 
-| Endpoint | Limit |
+---
+
+## 分類一覧
+
+| 分類 | 判定条件 |
 |---|---|
-| `/api/repos` (excavation) | 5 per user |
-| `/api/auth/github/start` | 10 per IP |
-| `/api/auth/github/callback` | 10 per IP |
-| `/api/me` | 60 per IP |
-| `/api/logout` | 20 per IP |
-
-Frontend double-click prevention is also implemented in `useExcavation`.
-
----
-
-## Security policy
-
-See [/security](/security) for the full security and privacy policy, including:
-- OAuth scope details
-- Token revocation process
-- Session cookie design
-- PKCE implementation
-- What data is and is not accessed
+| 🪦 Initial commitの遺影 | 作成直後に1回pushされ、1年以上放置（archive・forkを除く） |
+| 💀 黒歴史級化石 | 放置スコア ≥ 80 |
+| 🌱 一日坊主型黒歴史 | 一日坊主スコア ≥ 75 かつ 仮置き名スコア ≥ 50 |
+| 🕯️ 供養済み | archive済み（供養スコア ≥ 70） |
+| 🏛️ 古代遺跡 | 放置スコア 60〜79 |
+| 😴 休眠中 | 放置スコア 40〜59 |
+| 💚 現役っぽい | それ以外 |
 
 ---
 
-## Tech stack
+## レート制限
 
-| Layer | Technology |
+**GitHub API（非認証）:** IPアドレスあたり60リクエスト/時間。
+
+Cloudflare Workers の外部送信IPはユーザー間で共有されるため、実際の制限は60回/時間より少ない場合があります。429エラーが出た場合は数分待ってから再試行してください。
+
+**アプリ内レート制限**（1分あたり）:
+
+| エンドポイント | 制限 |
 |---|---|
-| Frontend | Vite + React 18 + TypeScript + Tailwind CSS |
-| Backend | Cloudflare Workers + Hono |
-| Auth | GitHub OAuth 2.0 with PKCE |
-| Session | HMAC-SHA256 signed cookie |
-| Image generation | html-to-image (client-side) |
-| Package manager | pnpm |
+| `/api/repos`（発掘） | ユーザーあたり5回 |
+| `/api/auth/github/start` | IPあたり10回 |
+| `/api/auth/github/callback` | IPあたり10回 |
+| `/api/me` | IPあたり60回 |
+| `/api/logout` | IPあたり20回 |
 
 ---
 
-## License
+## セキュリティポリシー
 
-MIT License — Copyright (c) 2025 Gitcheology Contributors
+詳細は [/security](/security) ページを参照してください。
 
-See [LICENSE](./LICENSE) for full text.
+---
+
+## 技術スタック
+
+| レイヤー | 技術 |
+|---|---|
+| フロントエンド | Vite + React 18 + TypeScript + Tailwind CSS |
+| バックエンド | Cloudflare Workers + Hono |
+| 認証 | GitHub OAuth 2.0 + PKCE |
+| セッション | HMAC-SHA256 署名済み Cookie |
+| 画像生成 | html-to-image（クライアントサイド） |
+| パッケージマネージャー | pnpm |
+
+---
+
+## ライセンス
+
+MIT License — Copyright (c) 2025 GitHub黒歴史 Contributors
+
+詳細は [LICENSE](./LICENSE) を参照してください。

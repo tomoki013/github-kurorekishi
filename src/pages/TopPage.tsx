@@ -10,7 +10,7 @@ export function TopPage() {
           <h1 className="text-4xl font-black tracking-tight text-white">
             GitHub黒歴史
           </h1>
-          <p className="text-lg text-gray-400 font-medium">GitHub考古学</p>
+
           <p className="text-gray-300 text-base leading-relaxed">
             あなたのGitHubに眠る公開リポジトリを発掘します。
             <br />
