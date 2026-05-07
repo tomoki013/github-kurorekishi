@@ -11,18 +11,22 @@ export class RateLimitError extends Error {
 
 async function fetchReposPage(
   login: string,
-  page: number
+  page: number,
+  clientId: string,
+  clientSecret: string
 ): Promise<{ repos: ScoringRepoInput[]; rateLimitRemaining: string | null }> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
     const url = `https://api.github.com/users/${encodeURIComponent(login)}/repos?type=public&per_page=100&page=${page}`;
+    // Use OAuth App credentials (client_id:client_secret) for 5000 req/hour instead of 60 req/hour
+    const credentials = btoa(`${clientId}:${clientSecret}`);
     const res = await fetch(url, {
       headers: {
         "User-Agent": "GitHubKurorekishi/1.0",
         Accept: "application/vnd.github+json",
-        // NO Authorization header — unauthenticated fetch
+        Authorization: `Basic ${credentials}`,
       },
       signal: controller.signal,
     });
@@ -66,8 +70,12 @@ async function fetchReposPage(
   }
 }
 
-export async function getAndScoreRepos(login: string): Promise<ScoredRepo[]> {
-  const { repos: page1, rateLimitRemaining } = await fetchReposPage(login, 1);
+export async function getAndScoreRepos(
+  login: string,
+  clientId: string,
+  clientSecret: string
+): Promise<ScoredRepo[]> {
+  const { repos: page1, rateLimitRemaining } = await fetchReposPage(login, 1, clientId, clientSecret);
 
   let allRepos = page1;
 
@@ -77,7 +85,7 @@ export async function getAndScoreRepos(login: string): Promise<ScoredRepo[]> {
       throw new RateLimitError();
     }
     try {
-      const { repos: page2 } = await fetchReposPage(login, 2);
+      const { repos: page2 } = await fetchReposPage(login, 2, clientId, clientSecret);
       allRepos = [...page1, ...page2];
     } catch (err) {
       if (err instanceof RateLimitError) throw err;

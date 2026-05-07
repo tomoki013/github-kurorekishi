@@ -4,6 +4,7 @@ import { useExcavation } from "../hooks/useExcavation";
 import { StepProgress } from "../components/StepProgress";
 import { RepoCard } from "../components/RepoCard";
 import { ShareCard } from "../components/ShareCard";
+import { Footer } from "../components/Footer";
 import type { RepoClassification } from "../lib/scoring/types";
 
 type Props = {
@@ -59,7 +60,7 @@ export function ResultPage({ user, onLogout }: Props) {
       : null;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* Header */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
@@ -182,6 +183,7 @@ export function ResultPage({ user, onLogout }: Props) {
           </>
         )}
       </main>
+      <Footer />
     </div>
   );
 }

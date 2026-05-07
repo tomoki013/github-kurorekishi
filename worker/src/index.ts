@@ -203,7 +203,7 @@ app.get("/api/repos", async (c) => {
   }
 
   try {
-    const repos = await getAndScoreRepos(session.login);
+    const repos = await getAndScoreRepos(session.login, env.GITHUB_CLIENT_ID, env.GITHUB_CLIENT_SECRET);
     return c.json(repos);
   } catch (err) {
     if (err instanceof RateLimitError) {

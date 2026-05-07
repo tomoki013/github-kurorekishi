@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
+import { Footer } from "../components/Footer";
 
 export function SecurityPage() {
   return (
-    <div className="min-h-screen bg-white text-gray-800">
+    <div className="min-h-screen bg-white text-gray-800 flex flex-col">
       {/* Header */}
       <header className="border-b border-gray-200 px-4 py-4">
         <div className="max-w-3xl mx-auto flex items-center justify-between">
@@ -274,6 +275,7 @@ export function SecurityPage() {
           </Link>
         </div>
       </main>
+      <Footer />
     </div>
   );
 }
