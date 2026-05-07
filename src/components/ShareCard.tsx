@@ -41,18 +41,6 @@ async function downloadPng(element: HTMLElement): Promise<void> {
   link.click();
 }
 
-function shareToX(login: string): void {
-  const text = encodeURIComponent(
-    `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
-  );
-  const url = encodeURIComponent(window.location.origin);
-  window.open(
-    `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
-
 export function ShareCard({ login, avatarUrl, repos }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const counts = countByClassification(repos);
@@ -128,20 +116,13 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-3 justify-center">
+      {/* Action button */}
+      <div className="flex justify-center">
         <button
           onClick={handleDownload}
-          className="px-4 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+          className="px-5 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
         >
           PNG保存
-        </button>
-        <button
-          onClick={() => shareToX(login)}
-          className="px-4 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-1.5"
-        >
-          <span className="font-bold">𝕏</span>
-          <span>でシェア</span>
         </button>
       </div>
     </div>
