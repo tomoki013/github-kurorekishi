@@ -61,6 +61,15 @@ function getClientIP(req: Request): string {
 
 const app = new Hono<{ Bindings: Env }>();
 
+// Env validation middleware — catch misconfiguration early
+app.use("/api/*", async (c, next) => {
+  const env = c.env;
+  if (!env.GITHUB_CLIENT_ID || !env.GITHUB_CLIENT_SECRET || !env.SESSION_SECRET || !env.GITHUB_REDIRECT_URI) {
+    return c.json({ error: "server_misconfiguration", message: "Required environment variables are not set. See README for wrangler secret put instructions." }, 500);
+  }
+  return next();
+});
+
 // Security headers middleware — apply to all routes
 app.use("*", async (c, next) => {
   await next();
