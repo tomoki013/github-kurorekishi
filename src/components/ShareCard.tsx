@@ -29,7 +29,10 @@ function countByClassification(
 }
 
 function canNativeShare(): boolean {
-  if (!navigator.canShare) return false;
+  // Only use native share sheet on touch devices (mobile/tablet).
+  // Desktop share sheets don't reliably show X without the app installed.
+  const isTouch = navigator.maxTouchPoints > 0 || "ontouchstart" in window;
+  if (!isTouch || !navigator.canShare) return false;
   try {
     return navigator.canShare({ files: [new File([], "test.png", { type: "image/png" })] });
   } catch {
