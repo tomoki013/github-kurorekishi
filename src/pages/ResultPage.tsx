@@ -143,7 +143,7 @@ export function ResultPage({ user, onLogout }: Props) {
               <div className="text-center mb-5">
                 <p className="text-gray-500 text-sm">@{user.login} の公開リポジトリ</p>
                 <p className="text-5xl font-black text-gray-800 mt-1">{repos.length}<span className="text-2xl text-gray-400 font-normal ml-1">件</span></p>
-                <p className="text-gray-400 text-sm mt-1">発掘完了 🎉</p>
+                <p className="text-gray-400 text-sm mt-1">黒歴史発掘 🎉</p>
               </div>
 
               {classificationCounts && (

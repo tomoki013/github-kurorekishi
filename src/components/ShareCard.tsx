@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import type { ScoredRepo, RepoClassification } from "../lib/scoring/types";
 
@@ -34,15 +34,28 @@ async function downloadPng(element: HTMLElement): Promise<void> {
     backgroundColor: "#ffffff",
     pixelRatio: 2,
   });
-
   const link = document.createElement("a");
   link.download = "github-kurorekishi-result.png";
   link.href = dataUrl;
   link.click();
 }
 
+function openXIntent(login: string): void {
+  const text = encodeURIComponent(
+    `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
+  );
+  const url = encodeURIComponent(window.location.origin);
+  window.open(
+    `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
+    "_blank",
+    "noopener,noreferrer"
+  );
+}
+
 export function ShareCard({ login, avatarUrl, repos }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
+  const [showXModal, setShowXModal] = useState(false);
+  const [xLoading, setXLoading] = useState(false);
   const counts = countByClassification(repos);
 
   const classifications: RepoClassification[] = [
@@ -55,6 +68,8 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
     "現役っぽい",
   ];
 
+  const siteUrl = window.location.origin;
+
   const handleDownload = async () => {
     if (!cardRef.current) return;
     try {
@@ -65,68 +80,142 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
     }
   };
 
+  const handleXConfirm = async () => {
+    if (!cardRef.current) return;
+    setXLoading(true);
+    try {
+      await downloadPng(cardRef.current);
+      openXIntent(login);
+    } catch (err) {
+      console.error("PNG generation failed:", err);
+      alert("PNG生成に失敗しました。");
+    } finally {
+      setXLoading(false);
+      setShowXModal(false);
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Wrapper captures PNG — padding prevents shadow clipping */}
-      <div ref={cardRef} style={{ padding: "20px", backgroundColor: "#ffffff", display: "inline-block", width: "100%" }}>
-      {/* The visual card */}
       <div
-        className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg"
-        style={{ fontFamily: "system-ui, sans-serif", maxWidth: "440px", margin: "0 auto" }}
+        ref={cardRef}
+        style={{ padding: "20px", backgroundColor: "#ffffff", display: "inline-block", width: "100%" }}
       >
-        <div className="flex items-center gap-3 mb-4">
-          <img
-            src={avatarUrl}
-            alt=""
-            className="w-12 h-12 rounded-full border border-gray-200"
-            crossOrigin="anonymous"
-          />
-          <div>
-            <p className="font-bold text-gray-800">@{login}</p>
-            <p className="text-xs text-gray-500">発掘報告書</p>
+        {/* The visual card */}
+        <div
+          className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg"
+          style={{ fontFamily: "system-ui, sans-serif", maxWidth: "440px", margin: "0 auto" }}
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <img
+              src={avatarUrl}
+              alt=""
+              className="w-12 h-12 rounded-full border border-gray-200"
+              crossOrigin="anonymous"
+            />
+            <div>
+              <p className="font-bold text-gray-800">@{login}</p>
+              <p className="text-xs text-gray-500">発掘報告書</p>
+            </div>
+            <div className="ml-auto text-right">
+              <p className="text-xl font-black text-gray-700">⛏️ GitHub黒歴史</p>
+            </div>
           </div>
-          <div className="ml-auto text-right">
-            <p className="text-xl font-black text-gray-700">⛏️ GitHub黒歴史</p>
+
+          <div className="text-sm text-gray-600 mb-3">
+            <span className="font-bold text-gray-800">{repos.length}</span>{" "}
+            件のリポジトリを発掘
           </div>
-        </div>
 
-        <div className="text-sm text-gray-600 mb-3">
-          <span className="font-bold text-gray-800">{repos.length}</span>{" "}
-          件のリポジトリを発掘
-        </div>
+          <div className="space-y-1.5">
+            {classifications.map((cls) => {
+              const count = counts[cls];
+              if (!count) return null;
+              return (
+                <div key={cls} className="flex items-center justify-between">
+                  <span className="text-sm">
+                    {CLASSIFICATION_EMOJI[cls]} {cls}
+                  </span>
+                  <span className="text-sm font-bold text-gray-700">
+                    {count}件
+                  </span>
+                </div>
+              );
+            })}
+          </div>
 
-        <div className="space-y-1.5">
-          {classifications.map((cls) => {
-            const count = counts[cls];
-            if (!count) return null;
-            return (
-              <div key={cls} className="flex items-center justify-between">
-                <span className="text-sm">
-                  {CLASSIFICATION_EMOJI[cls]} {cls}
-                </span>
-                <span className="text-sm font-bold text-gray-700">
-                  {count}件
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className="mt-4 pt-3 border-t border-gray-100 text-xs text-gray-400 text-center">
-          GitHub黒歴史 — private repo・email・source codeは取得していません
+          <div className="mt-4 pt-3 border-t border-gray-100 space-y-0.5 text-center">
+            <p className="text-xs text-gray-500 font-medium">{siteUrl}</p>
+            <p className="text-xs text-gray-400">
+              private repo・email・source codeは取得していません
+            </p>
+          </div>
         </div>
       </div>
-      </div>
 
-      {/* Action button */}
-      <div className="flex justify-center">
+      {/* Action buttons */}
+      <div className="flex gap-3 justify-center">
         <button
           onClick={handleDownload}
           className="px-5 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
         >
           PNG保存
         </button>
+        <button
+          onClick={() => setShowXModal(true)}
+          className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-1.5"
+        >
+          <span className="font-bold text-base leading-none">𝕏</span>
+          <span>でシェア</span>
+        </button>
       </div>
+
+      {/* X share modal */}
+      {showXModal && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => !xLoading && setShowXModal(false)}
+        >
+          <div
+            className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-center space-y-1">
+              <p className="text-2xl">⛏️</p>
+              <h2 className="font-black text-gray-800 text-lg">Xでシェア</h2>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
+              <p>① PNGが自動でダウンロードされます</p>
+              <p>② Xの投稿画面が開きます</p>
+              <p>③ ダウンロードしたPNGを投稿に添付してシェアしてください</p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowXModal(false)}
+                disabled={xLoading}
+                className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleXConfirm}
+                disabled={xLoading}
+                className="flex-1 py-2.5 bg-black text-white text-sm rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+              >
+                {xLoading ? (
+                  <span>保存中...</span>
+                ) : (
+                  <>
+                    <span className="font-bold">𝕏</span>
+                    <span>を開く</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
