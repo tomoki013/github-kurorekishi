@@ -28,21 +28,6 @@ function countByClassification(
   return counts;
 }
 
-async function generatePngDataUrl(element: HTMLElement): Promise<string> {
-  return toPng(element, {
-    cacheBust: true,
-    backgroundColor: "#ffffff",
-    pixelRatio: 2,
-  });
-}
-
-function downloadPngFromDataUrl(dataUrl: string): void {
-  const link = document.createElement("a");
-  link.download = "github-kurorekishi-result.png";
-  link.href = dataUrl;
-  link.click();
-}
-
 function canNativeShare(): boolean {
   if (!navigator.canShare) return false;
   try {
@@ -69,27 +54,19 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
   ];
 
   const siteUrl = window.location.origin;
+  const useNativeShare = canNativeShare();
 
-  const isMobileShare = canNativeShare();
-
-  const handleDownload = async () => {
-    if (!cardRef.current) return;
-    try {
-      const dataUrl = await generatePngDataUrl(cardRef.current);
-      downloadPngFromDataUrl(dataUrl);
-    } catch {
-      alert("PNG生成に失敗しました。");
-    }
-  };
-
-  const handleXShare = async () => {
+  const handleShare = async () => {
     if (!cardRef.current) return;
     setLoading(true);
     try {
-      const dataUrl = await generatePngDataUrl(cardRef.current);
+      const dataUrl = await toPng(cardRef.current, {
+        cacheBust: true,
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+      });
 
-      if (isMobileShare) {
-        // Mobile: use native share sheet (photos/X/LINE etc.)
+      if (useNativeShare) {
         const blob = await fetch(dataUrl).then((r) => r.blob());
         const file = new File([blob], "github-kurorekishi-result.png", { type: "image/png" });
         await navigator.share({
@@ -97,9 +74,12 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           text: `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史\n${siteUrl}`,
         });
       } else {
-        // Desktop: Safari fix — window.open must be called synchronously before any await.
-        // So we await PNG first, then open X (desktop popups aren't blocked the same way).
-        downloadPngFromDataUrl(dataUrl);
+        // Fallback: download PNG + open X
+        // (window.open after await is fine on desktop — only mobile Safari blocks it)
+        const link = document.createElement("a");
+        link.download = "github-kurorekishi-result.png";
+        link.href = dataUrl;
+        link.click();
         const text = encodeURIComponent(
           `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
         );
@@ -110,7 +90,6 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         );
       }
     } catch (err) {
-      // navigator.share throws AbortError if user cancels — not an error
       if (err instanceof Error && err.name !== "AbortError") {
         alert("PNG生成に失敗しました。");
       }
@@ -177,24 +156,17 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         </div>
       </div>
 
-      {/* Action buttons */}
-      <div className="flex gap-3 justify-center">
-        <button
-          onClick={handleDownload}
-          className="px-5 py-2 bg-gray-800 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          PNG保存
-        </button>
+      {/* Action button */}
+      <div className="flex justify-center">
         <button
           onClick={() => setShowModal(true)}
-          className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-1.5"
+          className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors"
         >
-          <span className="font-bold text-base leading-none">𝕏</span>
-          <span>でシェア</span>
+          シェア
         </button>
       </div>
 
-      {/* X share modal */}
+      {/* Share modal */}
       {showModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
@@ -206,21 +178,23 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           >
             <div className="text-center space-y-1">
               <p className="text-2xl">⛏️</p>
-              <h2 className="font-black text-gray-800 text-lg">Xでシェア</h2>
+              <h2 className="font-black text-gray-800 text-lg">シェア</h2>
             </div>
-            {isMobileShare ? (
+
+            {useNativeShare ? (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
-                <p>① PNGが生成されます</p>
+                <p>① 発掘結果のPNGが生成されます</p>
                 <p>② シェアシートが開きます</p>
-                <p>③ XやLINEなどお好きなアプリでシェアできます</p>
+                <p>③ お好きなアプリでシェアしてください</p>
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
                 <p>① PNGが自動でダウンロードされます</p>
                 <p>② Xの投稿画面が開きます</p>
-                <p>③ ダウンロードしたPNGを投稿に添付してシェアしてください</p>
+                <p>③ PNGを投稿に添付してシェアしてください</p>
               </div>
             )}
+
             <div className="flex gap-3">
               <button
                 onClick={() => setShowModal(false)}
@@ -230,18 +204,11 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
                 キャンセル
               </button>
               <button
-                onClick={handleXShare}
+                onClick={handleShare}
                 disabled={loading}
-                className="flex-1 py-2.5 bg-black text-white text-sm rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 bg-black text-white text-sm rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-40"
               >
-                {loading ? (
-                  <span>保存中...</span>
-                ) : (
-                  <>
-                    <span className="font-bold">𝕏</span>
-                    <span>を開く</span>
-                  </>
-                )}
+                {loading ? "生成中..." : "シェアする"}
               </button>
             </div>
           </div>
