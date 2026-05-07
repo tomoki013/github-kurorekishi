@@ -144,26 +144,28 @@ pnpm run worker:dev
 | `GITHUB_CLIENT_ID` | GitHub OAuth App の Client ID |
 | `GITHUB_CLIENT_SECRET` | GitHub OAuth App の Client Secret |
 | `SESSION_SECRET` | HMAC-SHA256 署名用のランダムな秘密鍵（32文字以上） |
-| `GITHUB_REDIRECT_URI` | OAuth コールバック URL（例：`https://github-kurorekishi.example.workers.dev/api/auth/github/callback`） |
+| `GITHUB_REDIRECT_URI` | OAuth コールバック URL（例：`https://{worker-name}.{subdomain}.workers.dev/api/auth/github/callback`） |
 
 ---
 
 ## Cloudflare Workers へのデプロイ
 
+`wrangler.toml` の `name` フィールドがデプロイ先の Worker 名になります。デプロイ後の URL は `https://{name}.{subdomain}.workers.dev` です。
+
 ### 1. 本番用 GitHub OAuth App を作成
 
 **Authorization callback URL** を本番の URL に設定:
 ```
-https://github-kurorekishi.{あなたのサブドメイン}.workers.dev/api/auth/github/callback
+https://{worker-name}.{subdomain}.workers.dev/api/auth/github/callback
 ```
 
-### 2. Wrangler でシークレットを登録
+### 2. シークレットを登録
 
 ```bash
-wrangler secret put GITHUB_CLIENT_ID
-wrangler secret put GITHUB_CLIENT_SECRET
-wrangler secret put SESSION_SECRET
-wrangler secret put GITHUB_REDIRECT_URI
+pnpm wrangler secret put GITHUB_CLIENT_ID
+pnpm wrangler secret put GITHUB_CLIENT_SECRET
+pnpm wrangler secret put SESSION_SECRET
+pnpm wrangler secret put GITHUB_REDIRECT_URI
 ```
 
 ### 3. デプロイ
@@ -178,12 +180,12 @@ pnpm run deploy
 
 `main` ブランチに push すると自動でデプロイされます（`.github/workflows/deploy.yml`）。
 
-GitHub リポジトリの **Settings → Secrets and variables → Actions** に以下を登録:
+リポジトリの **Settings → Secrets and variables → Actions** に以下を登録:
 
 | Secret 名 | 説明 |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare の API トークン（Edit Cloudflare Workers テンプレートで作成） |
-| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare のアカウント ID |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API トークン（Edit Cloudflare Workers テンプレートで作成） |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare アカウント ID |
 
 ---
 
