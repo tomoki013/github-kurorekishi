@@ -40,22 +40,10 @@ async function downloadPng(element: HTMLElement): Promise<void> {
   link.click();
 }
 
-function openXIntent(login: string): void {
-  const text = encodeURIComponent(
-    `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
-  );
-  const url = encodeURIComponent(window.location.origin);
-  window.open(
-    `https://twitter.com/intent/tweet?text=${text}&url=${url}`,
-    "_blank",
-    "noopener,noreferrer"
-  );
-}
-
 export function ShareCard({ login, avatarUrl, repos }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
-  const [showXModal, setShowXModal] = useState(false);
-  const [xLoading, setXLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(false);
   const counts = countByClassification(repos);
 
   const classifications: RepoClassification[] = [
@@ -74,24 +62,31 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
     if (!cardRef.current) return;
     try {
       await downloadPng(cardRef.current);
-    } catch (err) {
-      console.error("PNG generation failed:", err);
+    } catch {
       alert("PNG生成に失敗しました。");
     }
   };
 
-  const handleXConfirm = async () => {
+  const handleXShare = async () => {
     if (!cardRef.current) return;
-    setXLoading(true);
+    setLoading(true);
     try {
+      // Safari fix: window.open must be called synchronously before any await.
+      // Calling it after await gets blocked by Safari's popup blocker.
+      const text = encodeURIComponent(
+        `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
+      );
+      window.open(
+        `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(siteUrl)}`,
+        "_blank",
+        "noopener,noreferrer"
+      );
       await downloadPng(cardRef.current);
-      openXIntent(login);
-    } catch (err) {
-      console.error("PNG generation failed:", err);
+    } catch {
       alert("PNG生成に失敗しました。");
     } finally {
-      setXLoading(false);
-      setShowXModal(false);
+      setLoading(false);
+      setShowModal(false);
     }
   };
 
@@ -102,7 +97,6 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         ref={cardRef}
         style={{ padding: "20px", backgroundColor: "#ffffff", display: "inline-block", width: "100%" }}
       >
-        {/* The visual card */}
         <div
           className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-lg"
           style={{ fontFamily: "system-ui, sans-serif", maxWidth: "440px", margin: "0 auto" }}
@@ -145,8 +139,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
             })}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-gray-100 space-y-0.5 text-center">
-            <p className="text-xs text-gray-500 font-medium">{siteUrl}</p>
+          <div className="mt-4 pt-3 border-t border-gray-100 text-center">
             <p className="text-xs text-gray-400">
               private repo・email・source codeは取得していません
             </p>
@@ -163,7 +156,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           PNG保存
         </button>
         <button
-          onClick={() => setShowXModal(true)}
+          onClick={() => setShowModal(true)}
           className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors flex items-center gap-1.5"
         >
           <span className="font-bold text-base leading-none">𝕏</span>
@@ -172,10 +165,10 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
       </div>
 
       {/* X share modal */}
-      {showXModal && (
+      {showModal && (
         <div
           className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => !xLoading && setShowXModal(false)}
+          onClick={() => !loading && setShowModal(false)}
         >
           <div
             className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-xl space-y-4"
@@ -186,24 +179,24 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
               <h2 className="font-black text-gray-800 text-lg">Xでシェア</h2>
             </div>
             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
-              <p>① PNGが自動でダウンロードされます</p>
-              <p>② Xの投稿画面が開きます</p>
+              <p>① Xの投稿画面が開きます</p>
+              <p>② PNGが自動でダウンロードされます</p>
               <p>③ ダウンロードしたPNGを投稿に添付してシェアしてください</p>
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setShowXModal(false)}
-                disabled={xLoading}
+                onClick={() => setShowModal(false)}
+                disabled={loading}
                 className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40"
               >
                 キャンセル
               </button>
               <button
-                onClick={handleXConfirm}
-                disabled={xLoading}
+                onClick={handleXShare}
+                disabled={loading}
                 className="flex-1 py-2.5 bg-black text-white text-sm rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-40 flex items-center justify-center gap-1.5"
               >
-                {xLoading ? (
+                {loading ? (
                   <span>保存中...</span>
                 ) : (
                   <>
