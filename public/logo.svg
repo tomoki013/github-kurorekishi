@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" width="240" height="240">
+  <!-- Background -->
+  <rect width="240" height="240" rx="44" fill="#0f172a"/>
+
+  <!-- Pickaxe: translate to center-upper area, rotate 45deg CW -->
+  <g transform="translate(126,106) rotate(45)">
+    <!-- Handle -->
+    <rect x="-6" y="14" width="12" height="82" rx="6" fill="#94a3b8"/>
+    <!-- Head body -->
+    <rect x="-38" y="-15" width="76" height="30" rx="9" fill="#f1f5f9"/>
+    <!-- Pick tip (left in group → upper-left after rotation) -->
+    <polygon points="-38,-15 -72,0 -38,15" fill="#f1f5f9"/>
+    <!-- Mattock blade (right in group → lower-right after rotation) -->
+    <path d="M 38,-15 Q 74,-5 74,0 Q 74,5 38,15 Z" fill="#f1f5f9"/>
+  </g>
+
+  <!-- Amber sparkles near pick tip area (upper-left of center) -->
+  <circle cx="64" cy="52" r="6"   fill="#fbbf24"/>
+  <circle cx="46" cy="72" r="3.5" fill="#fbbf24" opacity="0.65"/>
+  <circle cx="52" cy="36" r="2.5" fill="#fbbf24" opacity="0.45"/>
+</svg>
