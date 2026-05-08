@@ -4,6 +4,7 @@ import { useAuth } from "./hooks/useAuth";
 import { TopPage } from "./pages/TopPage";
 import { ResultPage } from "./pages/ResultPage";
 import { SecurityPage } from "./pages/SecurityPage";
+import { LanguageProvider, useLanguage } from "./i18n";
 
 function MainPage() {
   const { user, loading, logout } = useAuth();
@@ -17,10 +18,12 @@ function MainPage() {
     }
   }, [searchParams, navigate]);
 
+  const { t } = useLanguage();
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-        <div className="text-gray-400 text-sm animate-pulse">読み込み中...</div>
+        <div className="text-gray-400 text-sm animate-pulse">{t.loading}</div>
       </div>
     );
   }
@@ -34,9 +37,11 @@ function MainPage() {
 
 export function App() {
   return (
-    <Routes>
-      <Route path="/" element={<MainPage />} />
-      <Route path="/security" element={<SecurityPage />} />
-    </Routes>
+    <LanguageProvider>
+      <Routes>
+        <Route path="/" element={<MainPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+      </Routes>
+    </LanguageProvider>
   );
 }

@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { toPng } from "html-to-image";
 import type { ScoredRepo, RepoClassification } from "../lib/scoring/types";
+import { useLanguage } from "../i18n";
 
 type Props = {
   login: string;
@@ -17,6 +18,16 @@ const CLASSIFICATION_EMOJI: Record<RepoClassification, string> = {
   "Initial commitの遺影": "🪦",
   供養済み: "🕯️",
 };
+
+const CLASSIFICATION_ORDER: RepoClassification[] = [
+  "Initial commitの遺影",
+  "黒歴史級化石",
+  "一日坊主型黒歴史",
+  "供養済み",
+  "古代遺跡",
+  "休眠中",
+  "現役っぽい",
+];
 
 function countByClassification(
   repos: ScoredRepo[]
@@ -44,17 +55,8 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
   const cardRef = useRef<HTMLDivElement>(null);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { t } = useLanguage();
   const counts = countByClassification(repos);
-
-  const classifications: RepoClassification[] = [
-    "Initial commitの遺影",
-    "黒歴史級化石",
-    "一日坊主型黒歴史",
-    "供養済み",
-    "古代遺跡",
-    "休眠中",
-    "現役っぽい",
-  ];
 
   const siteUrl = window.location.origin;
   const useNativeShare = canNativeShare();
@@ -74,7 +76,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         const file = new File([blob], "github-kurorekishi-result.png", { type: "image/png" });
         await navigator.share({
           files: [file],
-          text: `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史\n${siteUrl}`,
+          text: `${t.share.shareText(login)}\n${siteUrl}`,
         });
       } else {
         // Fallback: download PNG + open X
@@ -83,9 +85,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
         link.download = "github-kurorekishi-result.png";
         link.href = dataUrl;
         link.click();
-        const text = encodeURIComponent(
-          `GitHubの黒歴史を発掘しました ⛏️ @${login} #GitHub黒歴史`
-        );
+        const text = encodeURIComponent(t.share.shareText(login));
         window.open(
           `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(siteUrl)}`,
           "_blank",
@@ -94,7 +94,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
       }
     } catch (err) {
       if (err instanceof Error && err.name !== "AbortError") {
-        alert("PNG生成に失敗しました。");
+        alert(t.share.error);
       }
     } finally {
       setLoading(false);
@@ -122,7 +122,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
             />
             <div>
               <p className="font-bold text-gray-800">@{login}</p>
-              <p className="text-xs text-gray-500">発掘報告書</p>
+              <p className="text-xs text-gray-500">{t.share.reportTitle}</p>
             </div>
             <div className="ml-auto text-right">
               <p className="text-xl font-black text-gray-700">⛏️ GitHub黒歴史</p>
@@ -130,21 +130,20 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           </div>
 
           <div className="text-sm text-gray-600 mb-3">
-            <span className="font-bold text-gray-800">{repos.length}</span>{" "}
-            件のリポジトリを発掘
+            {t.share.reposExcavated(repos.length)}
           </div>
 
           <div className="space-y-1.5">
-            {classifications.map((cls) => {
+            {CLASSIFICATION_ORDER.map((cls) => {
               const count = counts[cls];
               if (!count) return null;
               return (
                 <div key={cls} className="flex items-center justify-between">
                   <span className="text-sm">
-                    {CLASSIFICATION_EMOJI[cls]} {cls}
+                    {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
                   </span>
                   <span className="text-sm font-bold text-gray-700">
-                    {count}件
+                    {count}
                   </span>
                 </div>
               );
@@ -152,9 +151,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           </div>
 
           <div className="mt-4 pt-3 border-t border-gray-100 text-center">
-            <p className="text-xs text-gray-400">
-              private repo・email・source codeは取得していません
-            </p>
+            <p className="text-xs text-gray-400">{t.share.privacyNotice}</p>
           </div>
         </div>
       </div>
@@ -165,7 +162,7 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           onClick={() => setShowModal(true)}
           className="px-5 py-2 bg-black text-white text-sm rounded-lg hover:bg-gray-900 transition-colors"
         >
-          シェア
+          {t.share.title}
         </button>
       </div>
 
@@ -181,20 +178,20 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
           >
             <div className="text-center space-y-1">
               <p className="text-2xl">⛏️</p>
-              <h2 className="font-black text-gray-800 text-lg">シェア</h2>
+              <h2 className="font-black text-gray-800 text-lg">{t.share.title}</h2>
             </div>
 
             {useNativeShare ? (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
-                <p>① 発掘結果のPNGが生成されます</p>
-                <p>② シェアシートが開きます</p>
-                <p>③ お好きなアプリでシェアしてください</p>
+                {t.share.nativeShareSteps.map((step, i) => (
+                  <p key={i}>{step}</p>
+                ))}
               </div>
             ) : (
               <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 space-y-2">
-                <p>① PNGが自動でダウンロードされます</p>
-                <p>② Xの投稿画面が開きます</p>
-                <p>③ PNGを投稿に添付してシェアしてください</p>
+                {t.share.desktopShareSteps.map((step, i) => (
+                  <p key={i}>{step}</p>
+                ))}
               </div>
             )}
 
@@ -204,14 +201,14 @@ export function ShareCard({ login, avatarUrl, repos }: Props) {
                 disabled={loading}
                 className="flex-1 py-2.5 border border-gray-200 text-gray-600 text-sm rounded-xl hover:bg-gray-50 transition-colors disabled:opacity-40"
               >
-                キャンセル
+                {t.share.cancel}
               </button>
               <button
                 onClick={handleShare}
                 disabled={loading}
                 className="flex-1 py-2.5 bg-black text-white text-sm rounded-xl hover:bg-gray-900 transition-colors disabled:opacity-40"
               >
-                {loading ? "生成中..." : "シェアする"}
+                {loading ? t.share.generating : t.share.share}
               </button>
             </div>
           </div>

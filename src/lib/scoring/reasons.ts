@@ -18,60 +18,56 @@ export function generateReasons(
   // Classification-specific reason
   switch (classification) {
     case "Initial commitの遺影":
-      reasons.push(
-        `作成日と最終push日がほぼ同じ（差: ${active}日）`
-      );
-      reasons.push(`最終pushから ${staleDays} 日が経過（遺影化）`);
+      reasons.push(`Created and last pushed almost at the same time (gap: ${active} day${active === 1 ? "" : "s"})`);
+      reasons.push(`Last pushed ${staleDays} day${staleDays === 1 ? "" : "s"} ago (ghost commit)`);
       break;
     case "供養済み":
-      reasons.push("archiveされている（供養済み）");
+      reasons.push("Archived (laid to rest)");
       break;
     case "一日坊主型黒歴史":
-      reasons.push(
-        `作成日と最終push日がほぼ同じ（差: ${active}日）`
-      );
+      reasons.push(`Created and last pushed almost at the same time (gap: ${active} day${active === 1 ? "" : "s"})`);
       break;
     case "黒歴史級化石":
     case "古代遺跡":
     case "休眠中":
-      reasons.push(`最終pushから ${staleDays} 日が経過`);
+      reasons.push(`Last pushed ${staleDays} day${staleDays === 1 ? "" : "s"} ago`);
       break;
     case "現役っぽい":
       if (staleDays < 30) {
-        reasons.push(`最近アクティブ（最終push: ${staleDays}日前）`);
+        reasons.push(`Recently active (last pushed ${staleDays} day${staleDays === 1 ? "" : "s"} ago)`);
       }
       break;
   }
 
   // Additional reasons based on scores and metadata
   if (repo.archived && classification !== "供養済み") {
-    reasons.push("archiveされている");
+    reasons.push("Archived");
   }
 
   if (repo.fork) {
-    reasons.push("forkリポジトリ");
+    reasons.push("Forked repository");
   }
 
   if (repo.stargazersCount === 0) {
-    reasons.push("starsが0個");
+    reasons.push("0 stars");
   } else if (repo.stargazersCount >= 10) {
-    reasons.push(`starsが${repo.stargazersCount}個（活発なプロジェクト）`);
+    reasons.push(`${repo.stargazersCount} stars (active project)`);
   }
 
   if (!repo.description || repo.description.trim() === "") {
-    reasons.push("descriptionがない");
+    reasons.push("No description");
   }
 
   if (scores.nameShame > 0) {
-    reasons.push(`repo名が一時的な命名: ${repo.name}`);
+    reasons.push(`Temporary-looking name: ${repo.name}`);
   }
 
   if (repo.openIssuesCount > 0 && staleDays >= 365) {
-    reasons.push(`open issueが ${repo.openIssuesCount} 件残っている`);
+    reasons.push(`${repo.openIssuesCount} open issue${repo.openIssuesCount === 1 ? "" : "s"} remaining`);
   }
 
   if (repo.language) {
-    reasons.push(`言語: ${repo.language}`);
+    reasons.push(`Language: ${repo.language}`);
   }
 
   return reasons;
