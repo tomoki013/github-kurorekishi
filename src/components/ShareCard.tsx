@@ -19,14 +19,15 @@ const CLASSIFICATION_EMOJI: Record<RepoClassification, string> = {
   供養済み: "🕯️",
 };
 
+// State-based worst → best, then special types
 const CLASSIFICATION_ORDER: RepoClassification[] = [
-  "Initial commitの遺影",
   "黒歴史級化石",
-  "一日坊主型黒歴史",
-  "供養済み",
   "古代遺跡",
   "休眠中",
   "現役っぽい",
+  "Initial commitの遺影",
+  "一日坊主型黒歴史",
+  "供養済み",
 ];
 
 function countByClassification(

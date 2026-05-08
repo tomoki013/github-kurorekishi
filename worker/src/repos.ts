@@ -95,20 +95,17 @@ export async function getAndScoreRepos(
 
   const scored = scoreAllRepos(allRepos);
 
-  // Sort: "Initial commitの遺影" and "供養済み" first, then by total score descending
+  // Sort: state-based repos first (by stale score desc), then special types
+  const SPECIAL: Set<string> = new Set([
+    "Initial commitの遺影",
+    "一日坊主型黒歴史",
+    "供養済み",
+  ]);
   scored.sort((a, b) => {
-    const aPriority =
-      a.classification === "Initial commitの遺影" ||
-      a.classification === "供養済み"
-        ? 1
-        : 0;
-    const bPriority =
-      b.classification === "Initial commitの遺影" ||
-      b.classification === "供養済み"
-        ? 1
-        : 0;
-    if (aPriority !== bPriority) return bPriority - aPriority;
-    return b.scores.total - a.scores.total;
+    const aSpecial = SPECIAL.has(a.classification) ? 1 : 0;
+    const bSpecial = SPECIAL.has(b.classification) ? 1 : 0;
+    if (aSpecial !== bSpecial) return aSpecial - bSpecial;
+    return b.scores.stale - a.scores.stale;
   });
 
   return scored;

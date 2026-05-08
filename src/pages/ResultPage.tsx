@@ -13,15 +13,22 @@ type Props = {
   onLogout: () => void;
 };
 
-const CLASSIFICATION_ORDER: RepoClassification[] = [
-  "Initial commitの遺影",
+// State-based: ordered worst → best
+const STATE_CLASSIFICATIONS: RepoClassification[] = [
   "黒歴史級化石",
-  "一日坊主型黒歴史",
-  "供養済み",
   "古代遺跡",
   "休眠中",
   "現役っぽい",
 ];
+
+// Special single-characteristic types
+const SPECIAL_CLASSIFICATIONS: RepoClassification[] = [
+  "Initial commitの遺影",
+  "一日坊主型黒歴史",
+  "供養済み",
+];
+
+const ALL_CLASSIFICATIONS = [...STATE_CLASSIFICATIONS, ...SPECIAL_CLASSIFICATIONS];
 
 const CLASSIFICATION_EMOJI: Record<RepoClassification, string> = {
   現役っぽい: "💚",
@@ -43,6 +50,34 @@ const CLASSIFICATION_COLOR: Record<RepoClassification, string> = {
   供養済み: "bg-gray-50 border-gray-200 text-gray-600",
 };
 
+function ClassificationBadge({
+  cls,
+  count,
+}: {
+  cls: RepoClassification;
+  count: number;
+}) {
+  const { t } = useLanguage();
+  return (
+    <div
+      className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm ${CLASSIFICATION_COLOR[cls]}`}
+    >
+      <span>
+        {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
+      </span>
+      <span className="font-bold ml-2">{count}</span>
+    </div>
+  );
+}
+
+function GroupLabel({ label }: { label: string }) {
+  return (
+    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider col-span-full mt-1 first:mt-0">
+      {label}
+    </p>
+  );
+}
+
 export function ResultPage({ user, onLogout }: Props) {
   const { excavate, repos, status, error } = useExcavation();
   const [legendOpen, setLegendOpen] = useState(false);
@@ -61,7 +96,7 @@ export function ResultPage({ user, onLogout }: Props) {
 
   const classificationCounts =
     repos.length > 0
-      ? CLASSIFICATION_ORDER.reduce(
+      ? ALL_CLASSIFICATIONS.reduce(
           (acc, cls) => {
             const count = repos.filter((r) => r.classification === cls).length;
             if (count > 0) acc[cls] = count;
@@ -70,6 +105,13 @@ export function ResultPage({ user, onLogout }: Props) {
           {} as Partial<Record<RepoClassification, number>>
         )
       : null;
+
+  const stateRepos = repos.filter((r) =>
+    STATE_CLASSIFICATIONS.includes(r.classification)
+  );
+  const specialRepos = repos.filter((r) =>
+    SPECIAL_CLASSIFICATIONS.includes(r.classification)
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -156,22 +198,26 @@ export function ResultPage({ user, onLogout }: Props) {
               </div>
 
               {classificationCounts && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {CLASSIFICATION_ORDER.map((cls) => {
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {/* State group */}
+                  <GroupLabel label={t.result.groupState} />
+                  {STATE_CLASSIFICATIONS.map((cls) => {
                     const count = classificationCounts[cls];
                     if (!count) return null;
-                    return (
-                      <div
-                        key={cls}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm ${CLASSIFICATION_COLOR[cls]}`}
-                      >
-                        <span>
-                          {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
-                        </span>
-                        <span className="font-bold ml-2">{count}</span>
-                      </div>
-                    );
+                    return <ClassificationBadge key={cls} cls={cls} count={count} />;
                   })}
+
+                  {/* Special group — only render if any exist */}
+                  {SPECIAL_CLASSIFICATIONS.some((cls) => classificationCounts[cls]) && (
+                    <>
+                      <GroupLabel label={t.result.groupSpecial} />
+                      {SPECIAL_CLASSIFICATIONS.map((cls) => {
+                        const count = classificationCounts[cls];
+                        if (!count) return null;
+                        return <ClassificationBadge key={cls} cls={cls} count={count} />;
+                      })}
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -188,19 +234,48 @@ export function ResultPage({ user, onLogout }: Props) {
                 </span>
               </button>
               {legendOpen && (
-                <div className="border-t border-gray-100 divide-y divide-gray-100">
-                  {CLASSIFICATION_ORDER.map((cls) => (
-                    <div key={cls} className="flex items-start gap-3 px-5 py-3">
-                      <span
-                        className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${CLASSIFICATION_COLOR[cls]}`}
-                      >
-                        {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
-                      </span>
-                      <span className="text-xs text-gray-500 pt-1">
-                        {t.classificationDescs[cls]}
-                      </span>
-                    </div>
-                  ))}
+                <div className="border-t border-gray-100">
+                  {/* State group */}
+                  <div className="px-5 pt-3 pb-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {t.result.groupState}
+                    </p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {STATE_CLASSIFICATIONS.map((cls) => (
+                      <div key={cls} className="flex items-start gap-3 px-5 py-3">
+                        <span
+                          className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${CLASSIFICATION_COLOR[cls]}`}
+                        >
+                          {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
+                        </span>
+                        <span className="text-xs text-gray-500 pt-1">
+                          {t.classificationDescs[cls]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Special group */}
+                  <div className="border-t border-gray-200 px-5 pt-3 pb-1">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {t.result.groupSpecial}
+                    </p>
+                  </div>
+                  <div className="divide-y divide-gray-100">
+                    {SPECIAL_CLASSIFICATIONS.map((cls) => (
+                      <div key={cls} className="flex items-start gap-3 px-5 py-3">
+                        <span
+                          className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${CLASSIFICATION_COLOR[cls]}`}
+                        >
+                          {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
+                        </span>
+                        <span className="text-xs text-gray-500 pt-1">
+                          {t.classificationDescs[cls]}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -212,18 +287,40 @@ export function ResultPage({ user, onLogout }: Props) {
               repos={repos}
             />
 
-            {/* Repo list */}
+            {/* Repo list — state repos first, then special */}
             {repos.length > 0 && (
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <h2 className="font-bold text-gray-600 text-sm uppercase tracking-wide">
                   {t.result.allReposHeading}
                 </h2>
-                {repos.map((scoredRepo) => (
-                  <RepoCard
-                    key={scoredRepo.repo.name}
-                    scoredRepo={scoredRepo}
-                  />
-                ))}
+
+                {stateRepos.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {t.result.groupState}
+                    </p>
+                    {stateRepos.map((scoredRepo) => (
+                      <RepoCard
+                        key={scoredRepo.repo.name}
+                        scoredRepo={scoredRepo}
+                      />
+                    ))}
+                  </div>
+                )}
+
+                {specialRepos.length > 0 && (
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                      {t.result.groupSpecial}
+                    </p>
+                    {specialRepos.map((scoredRepo) => (
+                      <RepoCard
+                        key={scoredRepo.repo.name}
+                        scoredRepo={scoredRepo}
+                      />
+                    ))}
+                  </div>
+                )}
               </div>
             )}
           </>

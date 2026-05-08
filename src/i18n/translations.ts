@@ -38,6 +38,8 @@ const en = {
     legendClose: "▲ Close",
     legendOpen: "▼ Open",
     allReposHeading: "All Repositories",
+    groupState: "Status",
+    groupSpecial: "Special",
   },
 
   classifications: {
@@ -254,6 +256,8 @@ const ja = {
     legendClose: "▲ 閉じる",
     legendOpen: "▼ 開く",
     allReposHeading: "全リポジトリ一覧",
+    groupState: "状態",
+    groupSpecial: "特殊",
   },
 
   classifications: {
