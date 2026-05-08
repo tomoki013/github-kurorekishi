@@ -1,12 +1,13 @@
 import { useState, useRef, useCallback } from "react";
 import type { ScoredRepo } from "../types/api";
+import { useLanguage } from "../i18n";
 
 export type ExcavationStatus =
   | "idle"
-  | "step1" // ログイン確認
-  | "step2" // リポジトリ取得
-  | "step3" // スコア計算
-  | "step4" // 結果準備
+  | "step1" // auth check
+  | "step2" // fetch repos
+  | "step3" // scoring
+  | "step4" // prepare result
   | "done"
   | "error";
 
@@ -22,6 +23,7 @@ export function useExcavation(): {
   const [error, setError] = useState<string | null>(null);
   const isRunningRef = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const { t } = useLanguage();
 
   const cancel = useCallback(() => {
     if (abortControllerRef.current) {
@@ -64,17 +66,15 @@ export function useExcavation(): {
 
         if (!res.ok) {
           if (res.status === 429) {
-            throw new Error(
-              "GitHub APIのレート制限に達しました。しばらく待ってから再試行してください。"
-            );
+            throw new Error(t.errors.rateLimit);
           }
           if (res.status === 401) {
-            throw new Error("認証が必要です。GitHubでログインしてください。");
+            throw new Error(t.errors.authRequired);
           }
           const body = (await res.json().catch(() => ({
             error: "unknown",
           }))) as { error?: string };
-          throw new Error(body.error ?? "サーバーエラーが発生しました。");
+          throw new Error(body.error ?? t.errors.serverError);
         }
 
         // Step 3: Scoring (server-side, simulate progress)
@@ -100,9 +100,7 @@ export function useExcavation(): {
           return;
         }
         const message =
-          err instanceof Error
-            ? err.message
-            : "予期しないエラーが発生しました。";
+          err instanceof Error ? err.message : t.errors.unexpected;
         setError(message);
         setStatus("error");
       } finally {
@@ -111,7 +109,8 @@ export function useExcavation(): {
     }
 
     run();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t]);
 
   return { excavate, cancel, repos, status, error };
 }

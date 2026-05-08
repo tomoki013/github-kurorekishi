@@ -1,18 +1,16 @@
 import type { ExcavationStatus } from "../hooks/useExcavation";
+import { useLanguage } from "../i18n";
 
 type Step = {
-  label: string;
   status: ExcavationStatus;
+  labelKey: "step1" | "step2" | "step3" | "step4";
 };
 
 const STEPS: Step[] = [
-  { label: "GitHubログイン状態を確認しています", status: "step1" },
-  {
-    label: "公開リポジトリのメタデータだけを取得しています",
-    status: "step2",
-  },
-  { label: "放置スコア・黒歴史スコアを計算しています", status: "step3" },
-  { label: "結果カードを準備しています", status: "step4" },
+  { labelKey: "step1", status: "step1" },
+  { labelKey: "step2", status: "step2" },
+  { labelKey: "step3", status: "step3" },
+  { labelKey: "step4", status: "step4" },
 ];
 
 const STATUS_ORDER: ExcavationStatus[] = [
@@ -34,6 +32,7 @@ type Props = {
 };
 
 export function StepProgress({ status }: Props) {
+  const { t } = useLanguage();
   const currentIdx = getStepIndex(status);
 
   return (
@@ -65,7 +64,7 @@ export function StepProgress({ status }: Props) {
                     : "text-gray-400"
                 }`}
               >
-                {step.label}
+                {t.steps[step.labelKey]}
               </span>
             </li>
           );
@@ -73,8 +72,7 @@ export function StepProgress({ status }: Props) {
       </ol>
 
       <p className="mt-4 text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded p-3">
-        取得しているのは公開repoのメタデータのみです。README本文・source
-        code・private repo・emailは取得していません。
+        {t.steps.metadataNote}
       </p>
     </div>
   );

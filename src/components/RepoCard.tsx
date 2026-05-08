@@ -1,4 +1,5 @@
 import type { ScoredRepo, RepoClassification } from "../lib/scoring/types";
+import { useLanguage } from "../i18n";
 
 type ClassificationStyle = {
   bg: string;
@@ -49,9 +50,9 @@ type Props = {
   scoredRepo: ScoredRepo;
 };
 
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, lang: string): string {
   const d = new Date(dateStr);
-  return d.toLocaleDateString("ja-JP", {
+  return d.toLocaleDateString(lang === "ja" ? "ja-JP" : "en-US", {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -60,6 +61,7 @@ function formatDate(dateStr: string): string {
 
 export function RepoCard({ scoredRepo }: Props) {
   const { repo, scores, classification, reasons } = scoredRepo;
+  const { t, lang } = useLanguage();
   const style = CLASSIFICATION_STYLES[classification];
 
   const lastPushed = repo.pushedAt ?? repo.updatedAt;
@@ -83,12 +85,12 @@ export function RepoCard({ scoredRepo }: Props) {
         <span
           className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full ${style.bg} ${style.text}`}
         >
-          {classification}
+          {t.classifications[classification]}
         </span>
       </div>
 
       <div className="flex items-center gap-4 text-xs text-gray-500">
-        <span>最終push: {formatDate(lastPushed)}</span>
+        <span>{t.repoCard.lastPushed} {formatDate(lastPushed, lang)}</span>
         {repo.language && <span>{repo.language}</span>}
         {repo.stargazersCount > 0 && (
           <span>★ {repo.stargazersCount}</span>
@@ -100,16 +102,16 @@ export function RepoCard({ scoredRepo }: Props) {
       </div>
 
       <div className="flex gap-2 flex-wrap text-xs">
-        <span className="text-gray-400">スコア:</span>
-        <span className="text-red-600">放置: {scores.stale}</span>
-        <span className="text-pink-600">一日坊主: {scores.oneDay}</span>
-        <span className="text-orange-600">命名恥: {scores.nameShame}</span>
+        <span className="text-gray-400">{t.repoCard.scores}</span>
+        <span className="text-red-600">{t.repoCard.stale}: {scores.stale}</span>
+        <span className="text-pink-600">{t.repoCard.oneDay}: {scores.oneDay}</span>
+        <span className="text-orange-600">{t.repoCard.nameShame}: {scores.nameShame}</span>
         {scores.memorial > 0 && (
-          <span className="text-gray-600">供養: {scores.memorial}</span>
+          <span className="text-gray-600">{t.repoCard.memorial}: {scores.memorial}</span>
         )}
         {scores.initialCommitPortrait > 0 && (
           <span className="text-purple-600">
-            遺影: {scores.initialCommitPortrait}
+            {t.repoCard.ghost}: {scores.initialCommitPortrait}
           </span>
         )}
       </div>

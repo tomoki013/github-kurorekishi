@@ -6,6 +6,7 @@ import { RepoCard } from "../components/RepoCard";
 import { ShareCard } from "../components/ShareCard";
 import { Footer } from "../components/Footer";
 import type { RepoClassification } from "../lib/scoring/types";
+import { useLanguage } from "../i18n";
 
 type Props = {
   user: MeResponse;
@@ -32,16 +33,6 @@ const CLASSIFICATION_EMOJI: Record<RepoClassification, string> = {
   供養済み: "🕯️",
 };
 
-const CLASSIFICATION_DESC: Record<RepoClassification, string> = {
-  "Initial commitの遺影": "作成直後に1回pushされ、1年以上放置",
-  黒歴史級化石: "放置スコア 80以上",
-  一日坊主型黒歴史: "一日坊主スコア 75以上 かつ 仮置き名スコア 50以上",
-  供養済み: "archive済み（供養スコア 70以上）",
-  古代遺跡: "放置スコア 60〜79",
-  休眠中: "放置スコア 40〜59",
-  現役っぽい: "それ以外",
-};
-
 const CLASSIFICATION_COLOR: Record<RepoClassification, string> = {
   現役っぽい: "bg-green-50 border-green-200 text-green-800",
   休眠中: "bg-yellow-50 border-yellow-200 text-yellow-800",
@@ -55,6 +46,7 @@ const CLASSIFICATION_COLOR: Record<RepoClassification, string> = {
 export function ResultPage({ user, onLogout }: Props) {
   const { excavate, repos, status, error } = useExcavation();
   const [legendOpen, setLegendOpen] = useState(false);
+  const { t, toggle } = useLanguage();
 
   const isLoading =
     status === "step1" ||
@@ -86,27 +78,35 @@ export function ResultPage({ user, onLogout }: Props) {
         <div className="max-w-3xl mx-auto px-4 py-3 flex items-center gap-3">
           <div className="flex items-center gap-2 mr-auto">
             <span className="text-xl">⛏️</span>
-            <span className="font-black text-gray-800">GitHub黒歴史</span>
+            <span className="font-black text-gray-800">{t.result.header}</span>
           </div>
           <img
             src={user.avatarUrl}
             alt=""
             className="w-7 h-7 rounded-full border border-gray-200"
           />
-          <span className="text-sm text-gray-600 hidden sm:inline">@{user.login}</span>
+          <span className="text-sm text-gray-600 hidden sm:inline">
+            @{user.login}
+          </span>
           {status === "done" && (
             <button
               onClick={() => excavate()}
               className="text-sm px-3 py-1.5 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
-              再発掘
+              {t.result.reExcavate}
             </button>
           )}
+          <button
+            onClick={toggle}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors border border-gray-200 rounded px-2 py-1"
+          >
+            {t.langToggle}
+          </button>
           <button
             onClick={onLogout}
             className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
           >
-            ログアウト
+            {t.result.logout}
           </button>
         </div>
       </header>
@@ -116,7 +116,7 @@ export function ResultPage({ user, onLogout }: Props) {
         {isLoading && (
           <div className="space-y-4 pt-8">
             <h2 className="text-xl font-bold text-gray-700 text-center">
-              発掘中... ⛏️
+              {t.result.excavating}
             </h2>
             <StepProgress status={status} />
           </div>
@@ -130,7 +130,7 @@ export function ResultPage({ user, onLogout }: Props) {
               onClick={() => excavate()}
               className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm"
             >
-              再試行
+              {t.result.retry}
             </button>
           </div>
         )}
@@ -141,9 +141,18 @@ export function ResultPage({ user, onLogout }: Props) {
             {/* Hero summary */}
             <div className="bg-white border border-gray-200 rounded-xl p-6">
               <div className="text-center mb-5">
-                <p className="text-gray-500 text-sm">@{user.login} の公開リポジトリ</p>
-                <p className="text-5xl font-black text-gray-800 mt-1">{repos.length}<span className="text-2xl text-gray-400 font-normal ml-1">件</span></p>
-                <p className="text-gray-400 text-sm mt-1">黒歴史発掘 🎉</p>
+                <p className="text-gray-500 text-sm">
+                  {t.result.publicRepos(user.login)}
+                </p>
+                <p className="text-5xl font-black text-gray-800 mt-1">
+                  {repos.length}
+                  <span className="text-2xl text-gray-400 font-normal ml-1">
+                    {t.result.reposUnit}
+                  </span>
+                </p>
+                <p className="text-gray-400 text-sm mt-1">
+                  {t.result.excavationComplete}
+                </p>
               </div>
 
               {classificationCounts && (
@@ -156,7 +165,9 @@ export function ResultPage({ user, onLogout }: Props) {
                         key={cls}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg border text-sm ${CLASSIFICATION_COLOR[cls]}`}
                       >
-                        <span>{CLASSIFICATION_EMOJI[cls]} {cls}</span>
+                        <span>
+                          {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
+                        </span>
                         <span className="font-bold ml-2">{count}</span>
                       </div>
                     );
@@ -171,17 +182,23 @@ export function ResultPage({ user, onLogout }: Props) {
                 onClick={() => setLegendOpen((v) => !v)}
                 className="w-full flex items-center justify-between px-5 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                <span>分類の基準</span>
-                <span className="text-gray-400 text-xs">{legendOpen ? "▲ 閉じる" : "▼ 開く"}</span>
+                <span>{t.result.legendHeading}</span>
+                <span className="text-gray-400 text-xs">
+                  {legendOpen ? t.result.legendClose : t.result.legendOpen}
+                </span>
               </button>
               {legendOpen && (
                 <div className="border-t border-gray-100 divide-y divide-gray-100">
                   {CLASSIFICATION_ORDER.map((cls) => (
                     <div key={cls} className="flex items-start gap-3 px-5 py-3">
-                      <span className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${CLASSIFICATION_COLOR[cls]}`}>
-                        {CLASSIFICATION_EMOJI[cls]} {cls}
+                      <span
+                        className={`flex-shrink-0 text-xs font-bold px-2 py-1 rounded-full border ${CLASSIFICATION_COLOR[cls]}`}
+                      >
+                        {CLASSIFICATION_EMOJI[cls]} {t.classifications[cls]}
                       </span>
-                      <span className="text-xs text-gray-500 pt-1">{CLASSIFICATION_DESC[cls]}</span>
+                      <span className="text-xs text-gray-500 pt-1">
+                        {t.classificationDescs[cls]}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -198,7 +215,9 @@ export function ResultPage({ user, onLogout }: Props) {
             {/* Repo list */}
             {repos.length > 0 && (
               <div className="space-y-3">
-                <h2 className="font-bold text-gray-600 text-sm uppercase tracking-wide">全リポジトリ一覧</h2>
+                <h2 className="font-bold text-gray-600 text-sm uppercase tracking-wide">
+                  {t.result.allReposHeading}
+                </h2>
                 {repos.map((scoredRepo) => (
                   <RepoCard
                     key={scoredRepo.repo.name}
